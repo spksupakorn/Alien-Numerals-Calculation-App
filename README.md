@@ -114,28 +114,6 @@ i=5: A(1)    vs B(5)    → 1 < 5       → SUBTRACT 1   → total = 1989
 Finally: Add B(5)                      → total = 1994 ✓
 ```
 
-### Why This Method Works:
-
-- **Natural Reading**: Processes left-to-right, like reading a book
-- **Simple Logic**: Just compare current with next - smaller value before larger means subtraction
-- **No Special Cases**: No need to memorize subtraction pairs (AB, CR, etc.)
-- **Efficient**: Single pass through the string
-
-**Time Complexity**: O(n) where n is the length of the input string  
-**Space Complexity**: O(1) as we use constant extra space
-
-## Code Quality
-
-This project follows modern Python best practices:
-
-- ✅ Full type hinting (PEP 484)
-- ✅ Comprehensive docstrings (Google style)
-- ✅ Clean, readable code with descriptive variable names
-- ✅ Object-Oriented design with proper encapsulation
-- ✅ Input validation
-- ✅ Error handling
-- ✅ Modular and extensible architecture
-
 ## Project Structure
 
 ```

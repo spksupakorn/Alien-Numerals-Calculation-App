@@ -48,10 +48,51 @@ The Alien Numeral system is similar to Roman numerals, where symbols represent s
 
 ## Usage
 
-### Running the Application
+### Option 1: Running Directly with Python
 ```bash
 python main.py
+# or
+python3 main.py
 ```
+
+### Option 2: Running with Docker 🐳
+
+Docker provides a consistent environment across all platforms without needing to install Python locally.
+
+#### Build the Docker image:
+```bash
+docker build -t alien-numerals-app .
+```
+
+#### Run the application:
+```bash
+docker run -it alien-numerals-app
+```
+
+#### Quick one-liner (build and run):
+```bash
+docker build -t alien-numerals-app . && docker run -it alien-numerals-app
+```
+
+#### Other useful Docker commands:
+```bash
+# List Docker images
+docker images
+
+# Remove the image
+docker rmi alien-numerals-app
+
+# Run without interactive mode (just see the demo)
+docker run alien-numerals-app
+
+# View running containers
+docker ps
+
+# Stop a running container
+docker stop <container-id>
+```
+
+**Note**: The `-it` flags are required for the interactive mode to work properly in Docker.
 
 ### Using as a Module
 
@@ -143,6 +184,8 @@ Alien-Numerals-Calculation-App/
 ├── main.py              # Main application with AlienNumeralConverter class
 ├── pyproject.toml       # Project configuration
 ├── README.md            # This file
+├── Dockerfile           # Docker container configuration
+├── .dockerignore        # Docker ignore patterns
 └── .python-version      # Python version specification
 ```
 

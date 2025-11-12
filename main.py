@@ -5,7 +5,7 @@ This module provides functionality to convert Alien Numeral strings into
 their integer equivalents.
 """
 
-from typing import Dict
+from typing import Dict, Tuple, Optional
 
 
 class AlienNumeralConverter:
@@ -38,6 +38,24 @@ class AlienNumeralConverter:
         'C': 100,
         'D': 500,
         'R': 1000
+    }
+    
+    # Maximum repetitions allowed for each symbol (like Roman numerals)
+    MAX_REPETITIONS: Dict[str, int] = {
+        'A': 3,  # AAA is OK (3), but AAAA (4) should be AB
+        'B': 1,  # B cannot repeat (use Z for 10)
+        'Z': 3,  # ZZZ is OK (30), but ZZZZ (40) should be ZL
+        'L': 1,  # L cannot repeat (use C for 100)
+        'C': 3,  # CCC is OK (300), but CCCC (400) should be CD
+        'D': 1,  # D cannot repeat (use R for 1000)
+        'R': 3   # RRR is OK (3000)
+    }
+    
+    # Valid subtraction pairs (smaller value can appear before larger value)
+    VALID_SUBTRACTION_PAIRS: Dict[str, list] = {
+        'A': ['B', 'Z'],      # A can appear before B (AB=4) or Z (AZ=9)
+        'Z': ['L', 'C'],      # Z can appear before L (ZL=40) or C (ZC=90)
+        'C': ['D', 'R']       # C can appear before D (CD=400) or R (CR=900)
     }
     
     def __init__(self) -> None:
@@ -111,6 +129,114 @@ class AlienNumeralConverter:
         """
         return all(char in self.SYMBOL_VALUES for char in s)
     
+    def is_valid_numeral(self, s: str) -> Tuple[bool, str]:
+        """
+        Check if a string follows proper Alien Numeral formation rules.
+        
+        Rules (similar to Roman numerals):
+        1. Only valid symbols allowed
+        2. Symbols cannot repeat more than their maximum allowed times
+           - A, Z, C, R can repeat up to 3 times (e.g., AAA = 3, but AAAA is invalid, use AB)
+           - B, L, D can appear only once (no BB, LL, DD)
+        3. Subtraction only works for specific pairs:
+           - A can only precede B or Z
+           - Z can only precede L or C
+           - C can only precede D or R
+        4. A smaller value can only appear before one larger value
+        
+        Args:
+            s (str): The Alien Numeral string to validate.
+        
+        Returns:
+            Tuple[bool, str]: (is_valid, error_message)
+                - (True, "") if valid
+                - (False, error_message) if invalid
+        
+        Example:
+            >>> converter = AlienNumeralConverter()
+            >>> converter.is_valid_numeral("AAA")
+            (True, '')
+            >>> converter.is_valid_numeral("AAAA")
+            (False, "Symbol 'A' repeats more than 3 times consecutively")
+            >>> converter.is_valid_numeral("AB")
+            (True, '')
+        """
+        # Check if string is empty
+        if not s:
+            return (False, "Empty string is not a valid numeral")
+        
+        # Check if all characters are valid symbols
+        if not self.is_valid(s):
+            invalid_chars = [c for c in s if c not in self.SYMBOL_VALUES]
+            return (False, f"Invalid symbols: {', '.join(invalid_chars)}")
+        
+        # Check for excessive repetitions
+        i = 0
+        while i < len(s):
+            char = s[i]
+            count = 1
+            
+            # Count consecutive repetitions
+            while i + count < len(s) and s[i + count] == char:
+                count += 1
+            
+            # Check against maximum allowed repetitions
+            max_allowed = self.MAX_REPETITIONS.get(char, 1)
+            if count > max_allowed:
+                return (False, f"Symbol '{char}' repeats more than {max_allowed} time(s) consecutively. Use subtraction notation instead (e.g., AB for 4, not AAAA)")
+            
+            i += count
+        
+        # Check for invalid subtraction patterns
+        for i in range(len(s) - 1):
+            current = s[i]
+            next_char = s[i + 1]
+            current_value = self.SYMBOL_VALUES[current]
+            next_value = self.SYMBOL_VALUES[next_char]
+            
+            # If current < next, it's a subtraction case - validate it
+            if current_value < next_value:
+                if current not in self.VALID_SUBTRACTION_PAIRS:
+                    return (False, f"Symbol '{current}' cannot be used in subtraction notation")
+                
+                if next_char not in self.VALID_SUBTRACTION_PAIRS[current]:
+                    return (False, f"Invalid subtraction pair: '{current}{next_char}'. {current} can only precede {', '.join(self.VALID_SUBTRACTION_PAIRS[current])}")
+        
+        return (True, "")
+    
+    def to_integer_safe(self, s: str) -> Tuple[Optional[int], str]:
+        """
+        Safely convert an Alien Numeral string to integer with validation.
+        
+        This method validates the numeral before conversion to ensure it follows
+        proper formation rules.
+        
+        Args:
+            s (str): The Alien Numeral string to convert.
+        
+        Returns:
+            Tuple[Optional[int], str]: (result, message)
+                - (integer_value, "") if successful
+                - (None, error_message) if validation fails
+        
+        Example:
+            >>> converter = AlienNumeralConverter()
+            >>> converter.to_integer_safe("AAA")
+            (3, '')
+            >>> converter.to_integer_safe("AAAA")
+            (None, "Symbol 'A' repeats more than 3 times consecutively...")
+        """
+        is_valid, error_msg = self.is_valid_numeral(s)
+        
+        if not is_valid:
+            return (None, error_msg)
+        
+        try:
+            result = self.to_integer(s)
+            return (result, "")
+        except KeyError as e:
+            return (None, f"Invalid symbol encountered: {e}")
+    
     def get_symbol_info(self) -> str:
         """
         Get a formatted string describing all available symbols and their values.
@@ -183,8 +309,35 @@ def main() -> None:
     print("-" * 60)
     print()
     
-    # Interactive section
+    # Validation examples
+    print("VALIDATION EXAMPLES:")
+    print("-" * 60)
+    print("Testing proper numeral formation rules...")
+    print()
+    
+    validation_examples = [
+        ("AAA", "Valid: 3 A's allowed"),
+        ("AAAA", "Invalid: Use AB for 4, not AAAA"),
+        ("AB", "Valid: Subtraction case = 4"),
+        ("AL", "Invalid: A can only precede B or Z"),
+        ("ZZZ", "Valid: 3 Z's allowed"),
+        ("ZZZZ", "Invalid: Use ZL for 40, not ZZZZ"),
+        ("BB", "Invalid: B cannot repeat"),
+    ]
+    
+    for numeral, description in validation_examples:
+        result, error = converter.to_integer_safe(numeral)
+        if result is not None:
+            print(f"✓ {numeral:10} = {result:4} | {description}")
+        else:
+            print(f"✗ {numeral:10}        | {description}")
+    
+    print("-" * 60)
+    print()
+    
+    # Interactive section with validation
     print("Try your own conversions (press Ctrl+C to exit):")
+    print("Note: The app validates proper numeral formation (e.g., AAAA is invalid, use AB)")
     print()
     try:
         while True:
@@ -192,11 +345,13 @@ def main() -> None:
             if not user_input:
                 continue
             
-            if converter.is_valid(user_input):
-                result = converter.to_integer(user_input)
-                print(f"Result: {result}")
+            # Use safe conversion with validation
+            result, error_msg = converter.to_integer_safe(user_input)
+            
+            if result is not None:
+                print(f"✓ Result: {result}")
             else:
-                print(f"Invalid input! Use only: {', '.join(sorted(converter.SYMBOL_VALUES.keys()))}")
+                print(f"✗ Invalid: {error_msg}")
             print()
     except (KeyboardInterrupt, EOFError):
         print("\n\nThank you for using Alien Numerals Calculator!")

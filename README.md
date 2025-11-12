@@ -26,6 +26,30 @@ The Alien Numeral system is similar to Roman numerals, where symbols represent s
 - `D` = 500
 - `R` = 1000
 
+### Formation Rules
+
+Like Roman numerals, Alien Numerals follow specific rules to prevent ambiguity:
+
+#### 1. **Repetition Limits**
+- **Repeatable up to 3 times**: `A`, `Z`, `C`, `R`
+  - ✓ Valid: `AAA` (3), `ZZZ` (30), `CCC` (300)
+  - ✗ Invalid: `AAAA` (use `AB` for 4), `ZZZZ` (use `ZL` for 40)
+- **Cannot repeat**: `B`, `L`, `D`
+  - ✓ Valid: `B` (5), `L` (50), `D` (500)
+  - ✗ Invalid: `BB`, `LL`, `DD`
+
+#### 2. **Valid Subtraction Pairs**
+- `A` can only precede `B` or `Z`: `AB` (4), `AZ` (9)
+- `Z` can only precede `L` or `C`: `ZL` (40), `ZC` (90)
+- `C` can only precede `D` or `R`: `CD` (400), `CR` (900)
+- ✗ Invalid combinations: `AL`, `AR`, `ZD`, `ZR`, etc.
+
+#### 3. **Why These Rules?**
+Just like Roman numerals don't use `IIII` for 4 (instead using `IV`), these rules ensure:
+- **Uniqueness**: Only one correct way to write each number
+- **Brevity**: Shorter representations (e.g., `AB` instead of `AAAA`)
+- **Clarity**: Prevents ambiguous or non-standard forms
+
 ## Installation
 
 ### Prerequisites
@@ -107,13 +131,39 @@ result = converter.to_integer("AAA")  # Returns: 3
 result = converter.to_integer("LBAAA")  # Returns: 58
 result = converter.to_integer("RCRZCAB")  # Returns: 1994
 
-# Validate input
+# Validate if string contains only valid symbols
 is_valid = converter.is_valid("ABC")  # Returns: True
 is_valid = converter.is_valid("XYZ")  # Returns: False
+
+# Validate if numeral follows proper formation rules
+is_valid, error = converter.is_valid_numeral("AAA")   # Returns: (True, "")
+is_valid, error = converter.is_valid_numeral("AAAA")  # Returns: (False, "Symbol 'A' repeats...")
+
+# Safe conversion with validation (recommended)
+result, error = converter.to_integer_safe("AB")    # Returns: (4, "")
+result, error = converter.to_integer_safe("AAAA")  # Returns: (None, "Symbol 'A' repeats...")
 
 # Get symbol information
 info = converter.get_symbol_info()
 print(info)
+```
+
+### Validation Examples
+
+```python
+# Valid numerals
+converter.is_valid_numeral("AAA")     # (True, "") - 3
+converter.is_valid_numeral("AB")      # (True, "") - 4 (subtraction)
+converter.is_valid_numeral("ZZZ")     # (True, "") - 30
+converter.is_valid_numeral("RCRZCAB") # (True, "") - 1994
+
+# Invalid numerals - too many repetitions
+converter.is_valid_numeral("AAAA")    # (False, "Symbol 'A' repeats more than 3 times...")
+converter.is_valid_numeral("BBBB")    # (False, "Symbol 'B' repeats more than 1 time...")
+
+# Invalid numerals - wrong subtraction pairs
+converter.is_valid_numeral("AL")      # (False, "Invalid subtraction pair: 'AL'...")
+converter.is_valid_numeral("ZD")      # (False, "Invalid subtraction pair: 'ZD'...")
 ```
 
 ## Test Cases
